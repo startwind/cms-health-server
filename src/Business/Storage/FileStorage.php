@@ -19,7 +19,7 @@ class FileStorage implements Storage
     {
         $recentCheck = $this->getHealthCheckResult($endpoint);
 
-        if ($recentCheck['status'] == $healthCheckFormat['status']) {
+        if ( $recentCheck && $recentCheck['status'] == $healthCheckFormat['status']) {
             if (array_key_exists('status_since', $recentCheck['_internal'])) {
                 $healthCheckFormat['_internal']['status_since'] = $recentCheck['_internal']['status_since'];
             } else {
@@ -29,12 +29,16 @@ class FileStorage implements Storage
             $healthCheckFormat['_internal']['status_since'] = time();
         }
 
-        file_put_contents($this->directory . '/' . md5($endpoint) . ',json', json_encode($healthCheckFormat));
+        file_put_contents($this->directory . '/' . md5($endpoint) . '.json', json_encode($healthCheckFormat));
     }
 
-    public function getHealthCheckResult(string $endpoint): array
+    public function getHealthCheckResult(string $endpoint): array|bool
     {
-        $rawJson = file_get_contents($this->directory . '/' . md5($endpoint) . ',json');
+        $filename = $this->directory . '/' . md5($endpoint) . '.json';
+        if ( !file_exists($filename) ) {
+            return false;
+        }
+        $rawJson = file_get_contents($filename);
 
         return json_decode($rawJson, true);
     }
